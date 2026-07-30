@@ -1,4 +1,4 @@
-# Bitwarden → Wazuh Integration
+# Bitwarden → Wazuh Integration [BETA]
 
 Feed Bitwarden organization event logs into an existing Wazuh manager as
 proper, correctly-classified alerts — logins, failed-login/brute-force
