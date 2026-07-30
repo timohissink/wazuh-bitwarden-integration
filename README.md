@@ -1,4 +1,4 @@
-# Bitwarden to Wazuh SIEM Integration.
+# Bitwarden to Wazuh SIEM Integration
 
 > Turn Bitwarden organisation events into clear, actionable Wazuh alerts — without building and maintaining your own API poller or detection rules.
 
