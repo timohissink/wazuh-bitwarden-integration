@@ -1,6 +1,6 @@
 # Vault Event Monitor
 
-> An unofficial integration for integrating Bitwarden (Enterprise/Teams Plan) event logs into Wazuh.
+> An unofficial integration for integrating Bitwarden (Enterprise / Teams Plan) event logs into Wazuh.
 
 ![Bash](https://img.shields.io/badge/Bash-5.0%2B-4EAA25?logo=gnubash&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
