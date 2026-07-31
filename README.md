@@ -1,7 +1,6 @@
 # Vault Event Monitor
 
-> An unofficial integration for integrating Bitwarden (Enterprise / Teams) event logs into Wazuh Managers.
-
+> An unofficial event-collection and alerting helper compatible with Bitwarden organisation event logs and Wazuh managers.
 
 ![Bash](https://img.shields.io/badge/Bash-5.0%2B-4EAA25?logo=gnubash&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
@@ -57,8 +56,23 @@ You need:
 
 - a working Wazuh manager (this project does not install Wazuh);
 - `sudo` or root access on that manager;
+- Python 3 with the third-party `requests` package available to that Python installation;
 - outbound HTTPS access to Bitwarden or your self-hosted instance; and
 - a Bitwarden organisation on a Teams or Enterprise plan, with an organisation API key.
+
+### Python dependency
+
+The poller imports the third-party Python package [`requests`](https://pypi.org/project/requests/). During `install` and `update`, the installer checks whether `python3` can import it. If not, it first attempts:
+
+```bash
+python3 -m pip install requests --break-system-packages
+```
+
+If that fails, it retries without `--break-system-packages`.
+
+`--break-system-packages` allows `pip` to modify an operating-system-managed Python environment. This can cause dependency conflicts or make future system updates less predictable. On production hosts, consider installing `requests` first through your operating system's supported package manager (for example, a `python3-requests` package) so that the installer does not need to invoke `pip`.
+
+The current installer and cron job use the system Python; they do not create a virtual environment. Uninstalling Vault Event Monitor does **not** remove `requests`, because it may be used by other software on the host.
 
 ### Install
 
@@ -178,7 +192,7 @@ Check the current mode:
 cat /etc/bitwarden-wazuh/.rules_mode
 ```
 
-If your Wazuh manager already uses IDs in the `100250`–`100294` range, select `custom` mode and renumber the deployed rules to an unused range. The installer will not overwrite those local changes.
+Before deploying rules, the installer checks other Wazuh rule files for use of IDs in the `100250`–`100294` range. It stops before changing the Wazuh configuration if it finds a conflict. If your Wazuh manager already uses that range, select `custom` mode and renumber the deployed rules to an unused range. The installer will not overwrite those local changes.
 
 ## Verify the installation
 
@@ -205,6 +219,7 @@ sudo tail -1 /var/log/bitwarden/events.log \
 | `/etc/bitwarden-wazuh/.rules_mode` | Selected rule-management mode |
 | `/etc/bitwarden-wazuh/README.md` | Configuration documentation on the server |
 | `/var/log/bitwarden/events.log` | Events monitored by Wazuh |
+| `/var/log/bitwarden/poller.log` | Poller output written by cron |
 | `/etc/cron.d/bitwarden-wazuh` | Runs the poller every minute as root |
 | `/var/ossec/etc/ossec.conf` | Adds a marked Wazuh `<localfile>` entry |
 | `/var/ossec/etc/rules/bitwarden-wazuh-rules.xml` | Dedicated rules file copied from the repository |
@@ -243,4 +258,6 @@ Uninstalling removes the integration, including `organizations.json` and its API
 
 ## License
 
-Licensed under MIT. See the `LICENSE` file for details.
+Licensed under MIT.
+
+See the `LICENSE` file for details.
