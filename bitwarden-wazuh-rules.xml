@@ -1,0 +1,307 @@
+<group name="bitwarden,">
+
+  <rule id="100250" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="_source" type="pcre2">^bitwarden$</field>
+    <description>Bitwarden: event received</description>
+  </rule>
+
+  <!-- Authentication -->
+  <rule id="100251" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1000$</field>
+    <description>Bitwarden: user logged in (actingUserId: $(actingUserId))</description>
+    <group>authentication_success,</group>
+  </rule>
+
+  <rule id="100252" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1005$</field>
+    <description>Bitwarden: failed login - incorrect password (actingUserId: $(actingUserId), src_ip: $(ipAddress))</description>
+    <group>authentication_failed,bitwarden_login_failed,</group>
+  </rule>
+
+  <rule id="100253" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1006$</field>
+    <description>Bitwarden: failed login - incorrect two-step login (actingUserId: $(actingUserId), src_ip: $(ipAddress))</description>
+    <group>authentication_failed,bitwarden_login_failed,</group>
+  </rule>
+
+  <rule id="100254" level="10" frequency="5" timeframe="120">
+    <if_matched_group>bitwarden_login_failed</if_matched_group>
+    <same_field>actingUserId</same_field>
+    <description>Bitwarden: possible brute-force attempt - 5 failed logins within 2 minutes (actingUserId: $(actingUserId))</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>authentication_failures,</group>
+  </rule>
+
+  <!-- Account security changes -->
+  <rule id="100255" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1001$</field>
+    <description>Bitwarden: user changed their account password (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100256" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1003$</field>
+    <description>Bitwarden: user turned OFF two-step login (actingUserId: $(actingUserId))</description>
+    <group>2fa,</group>
+  </rule>
+
+  <rule id="100257" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1002$</field>
+    <description>Bitwarden: user enabled two-step login (actingUserId: $(actingUserId))</description>
+    <group>2fa,</group>
+  </rule>
+
+  <rule id="100258" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1008$</field>
+    <description>Bitwarden: master password reset via account recovery (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100259" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1009$</field>
+    <description>Bitwarden: user migrated their decryption key with Key Connector (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- Vault export / data exfiltration -->
+  <rule id="100260" level="12">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1007$</field>
+    <description>Bitwarden: user exported their individual vault items (actingUserId: $(actingUserId))</description>
+    <group>data_loss,</group>
+  </rule>
+
+  <rule id="100261" level="12">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1602$</field>
+    <description>Bitwarden: organization vault was exported (actingUserId: $(actingUserId))</description>
+    <group>data_loss,</group>
+  </rule>
+
+  <rule id="100262" level="15">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1601$</field>
+    <description>Bitwarden: organization vault was PURGED (actingUserId: $(actingUserId))</description>
+    <group>data_loss,</group>
+  </rule>
+
+  <!-- Item events -->
+  <rule id="100263" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1100$</field>
+    <description>Bitwarden: item created (itemId: $(itemId), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100264" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1101$</field>
+    <description>Bitwarden: item edited (itemId: $(itemId), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100265" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1102$</field>
+    <description>Bitwarden: item permanently deleted (itemId: $(itemId), actingUserId: $(actingUserId))</description>
+    <group>item_deletion,</group>
+  </rule>
+
+  <rule id="100266" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1115$</field>
+    <description>Bitwarden: item sent to trash (itemId: $(itemId), actingUserId: $(actingUserId))</description>
+    <group>item_deletion,</group>
+  </rule>
+
+  <rule id="100267" level="12" frequency="10" timeframe="300">
+    <if_matched_group>item_deletion</if_matched_group>
+    <same_field>actingUserId</same_field>
+    <description>Bitwarden: possible mass deletion of vault items - 10+ deletions within 5 minutes (actingUserId: $(actingUserId))</description>
+    <group>data_loss,</group>
+  </rule>
+
+  <!-- Sensitive field access (auditing, not necessarily malicious) -->
+  <rule id="100268" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1108|1109|1110|1111|1112|1113|1117|1118)$</field>
+    <description>Bitwarden: sensitive field viewed or copied - password/hidden field/security code (itemId: $(itemId), actingUserId: $(actingUserId))</description>
+    <group>item_sensitive_access,</group>
+  </rule>
+
+  <!-- Organization membership -->
+  <rule id="100269" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1500$</field>
+    <description>Bitwarden: user invited to organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100270" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1503$</field>
+    <description>Bitwarden: user removed from organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100271" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1511$</field>
+    <description>Bitwarden: organization access revoked for a user (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100272" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1512$</field>
+    <description>Bitwarden: organization access restored for a user (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100273" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1515$</field>
+    <description>Bitwarden: user deleted from organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- Organization / security settings -->
+  <rule id="100274" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1600$</field>
+    <description>Bitwarden: organization settings edited (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100275" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1604$</field>
+    <description>Bitwarden: SSO enabled for organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100276" level="10">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1605$</field>
+    <description>Bitwarden: SSO disabled for organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100277" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1606$</field>
+    <description>Bitwarden: Key Connector enabled for organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100278" level="10">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1607$</field>
+    <description>Bitwarden: Key Connector disabled for organization (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100279" level="10">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^1700$</field>
+    <description>Bitwarden: enterprise policy modified (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- Claimed domains -->
+  <rule id="100280" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2000|2001)$</field>
+    <description>Bitwarden: claimed domain added or removed (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- Secrets Manager -->
+  <rule id="100281" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^2103$</field>
+    <description>Bitwarden: Secrets Manager secret deleted (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100282" level="8">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^2203$</field>
+    <description>Bitwarden: Secrets Manager project deleted (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100283" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^2305$</field>
+    <description>Bitwarden: Secrets Manager machine account deleted (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- Bitwarden Send -->
+  <rule id="100284" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2501|2502|2503|2504|2505)$</field>
+    <description>Bitwarden: Send created (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100285" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2508|2509)$</field>
+    <description>Bitwarden: Send deleted (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100286" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2510|2511)$</field>
+    <description>Bitwarden: Send accessed (actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- "Rest" categories: every other officially documented Bitwarden -->
+  <!-- event type (bitwarden.com/help/event-logs) that doesn't warrant -->
+  <!-- its own dedicated rule above, grouped by area, so the generic  -->
+  <!-- "Bitwarden: event received" fallback (100250) is now only seen -->
+  <!-- for event types Bitwarden documents in the future.             -->
+  <!-- ============================================================= -->
+
+  <rule id="100287" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1103|1104|1105|1106|1107|1114|1116)$</field>
+    <description>Bitwarden: item interaction (type $(type), itemId: $(itemId), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100288" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1300|1301|1302)$</field>
+    <description>Bitwarden: collection event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100289" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1400|1401|1402)$</field>
+    <description>Bitwarden: group event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100290" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1004|1010|1011)$</field>
+    <description>Bitwarden: account event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100291" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1501|1502|1504|1505|1506|1507|1508|1509|1510|1513|1514|1516|1517|1518|1519)$</field>
+    <description>Bitwarden: organization membership event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100292" level="5">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(1603|1608|1609|1610|1611|1612|1613|1614|1615|1616|1617|1618|1619|1620|1621|1622|1623|2002|2003)$</field>
+    <description>Bitwarden: organization settings event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100293" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2100|2101|2102|2200|2201|2202|2300|2301|2302|2303|2304)$</field>
+    <description>Bitwarden: Secrets Manager event (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+  <rule id="100294" level="3">
+    <if_sid>100250</if_sid>
+    <field name="type" type="pcre2">^(2506|2507)$</field>
+    <description>Bitwarden: Send edited (type $(type), actingUserId: $(actingUserId))</description>
+  </rule>
+
+</group>
