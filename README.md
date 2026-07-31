@@ -70,7 +70,7 @@ python3 -m pip install requests --break-system-packages
 
 If that fails, it retries without `--break-system-packages`.
 
-`--break-system-packages` allows `pip` to modify an operating-system-managed Python environment. This can cause dependency conflicts or make future system updates less predictable. On production hosts, consider installing `requests` first through your operating system's supported package manager (for example, a `python3-requests` package) so that the installer does not need to invoke `pip`.
+`--break-system-packages` allows `pip` to modify an operating-system-managed Python environment. This can cause dependency conflicts. On production hosts, consider installing `requests` first through your operating system's supported package manager (for example, a `python3-requests` package) so that the installer does not need to invoke `pip`.
 
 The current installer and cron job use the system Python; they do not create a virtual environment. Uninstalling Vault Event Monitor does **not** remove `requests`, because it may be used by other software on the host.
 
