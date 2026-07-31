@@ -8,20 +8,20 @@
 # rules.
 #
 # Interactive use (recommended for first-time setup):
-#   sudo bash bitwarden-wazuh.sh
+#   sudo bash vault-event-monitor.sh
 #     -> shows a menu: Install / Add organization / Remove organization /
 #        Status / Run the poller now / Update rules & configuration /
 #        Uninstall / Exit
 #
 # Non-interactive use (for automation/CI/repeated testing):
-#   sudo bash bitwarden-wazuh.sh install [--name NAME --client-id ID --client-secret SECRET]
-#   sudo bash bitwarden-wazuh.sh add-org --name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]
-#   sudo bash bitwarden-wazuh.sh remove-org --name NAME
-#   sudo bash bitwarden-wazuh.sh status
-#   sudo bash bitwarden-wazuh.sh run-now
-#   sudo bash bitwarden-wazuh.sh update
-#   sudo bash bitwarden-wazuh.sh uninstall [--force]
-#   sudo bash bitwarden-wazuh.sh help
+#   sudo bash vault-event-monitor.sh install [--name NAME --client-id ID --client-secret SECRET]
+#   sudo bash vault-event-monitor.sh add-org --name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]
+#   sudo bash vault-event-monitor.sh remove-org --name NAME
+#   sudo bash vault-event-monitor.sh status
+#   sudo bash vault-event-monitor.sh run-now
+#   sudo bash vault-event-monitor.sh update
+#   sudo bash vault-event-monitor.sh uninstall [--force]
+#   sudo bash vault-event-monitor.sh help
 #
 # Prerequisites:
 #   - A working Wazuh manager (this does NOT install Wazuh itself)
@@ -506,7 +506,7 @@ ORGS_EXAMPLE_EOF
     cat > "${ORGS_CONFIG}" <<'ORGS_EOF'
 [
   {
-    "_comment": "Add another organization here, like the one below - or use: sudo bash bitwarden-wazuh.sh add-org"
+    "_comment": "Add another organization here, like the one below - or use: sudo bash vault-event-monitor.sh add-org"
   }
 ]
 ORGS_EOF
@@ -528,9 +528,9 @@ Use the management script rather than editing `organizations.json` by hand
 where possible:
 
 ```bash
-sudo bash bitwarden-wazuh.sh add-org --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
-sudo bash bitwarden-wazuh.sh remove-org --name "Acme Corp"
-sudo bash bitwarden-wazuh.sh status
+sudo bash vault-event-monitor.sh add-org --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
+sudo bash vault-event-monitor.sh remove-org --name "Acme Corp"
+sudo bash vault-event-monitor.sh status
 ```
 
 Or run it without arguments for an interactive menu.
@@ -550,7 +550,7 @@ Pass `--identity-url` and `--api-url` to `add-org` (leave them out for
 Bitwarden Cloud, which is the default):
 
 ```bash
-sudo bash bitwarden-wazuh.sh add-org \
+sudo bash vault-event-monitor.sh add-org \
   --name "Acme Self-Hosted" \
   --client-id "organization.yyyy" \
   --client-secret "yyyy" \
@@ -564,7 +564,7 @@ sudo bash bitwarden-wazuh.sh add-org \
 minute, via cron), or immediately:
 
 ```bash
-sudo bash bitwarden-wazuh.sh run-now
+sudo bash vault-event-monitor.sh run-now
 ```
 
 ### Security
@@ -590,7 +590,7 @@ filled-in copy to version control; only `organizations.json.example`
 ## Verifying it works
 
 ```bash
-sudo bash bitwarden-wazuh.sh status
+sudo bash vault-event-monitor.sh status
 sudo tail -f /var/log/bitwarden/poller.log
 sudo tail -f /var/ossec/logs/alerts/alerts.json | grep '"description":"Bitwarden: '
 ```
@@ -598,7 +598,7 @@ sudo tail -f /var/ossec/logs/alerts/alerts.json | grep '"description":"Bitwarden
 ## Uninstalling
 
 ```bash
-sudo bash bitwarden-wazuh.sh uninstall
+sudo bash vault-event-monitor.sh uninstall
 ```
 README_EOF
   chmod 644 "${README_FILE}"
@@ -1639,23 +1639,23 @@ print_help() {
 Bitwarden -> Wazuh integration
 
 Interactive use (recommended for first-time setup):
-  sudo bash bitwarden-wazuh.sh
+  sudo bash vault-event-monitor.sh
 
 Non-interactive use:
-  sudo bash bitwarden-wazuh.sh install [--name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]]
-  sudo bash bitwarden-wazuh.sh add-org --name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]
-  sudo bash bitwarden-wazuh.sh remove-org --name NAME
-  sudo bash bitwarden-wazuh.sh status
-  sudo bash bitwarden-wazuh.sh run-now
-  sudo bash bitwarden-wazuh.sh update
-  sudo bash bitwarden-wazuh.sh uninstall [--force]
-  sudo bash bitwarden-wazuh.sh help
+  sudo bash vault-event-monitor.sh install [--name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]]
+  sudo bash vault-event-monitor.sh add-org --name NAME --client-id ID --client-secret SECRET [--identity-url URL] [--api-url URL]
+  sudo bash vault-event-monitor.sh remove-org --name NAME
+  sudo bash vault-event-monitor.sh status
+  sudo bash vault-event-monitor.sh run-now
+  sudo bash vault-event-monitor.sh update
+  sudo bash vault-event-monitor.sh uninstall [--force]
+  sudo bash vault-event-monitor.sh help
 
 Examples:
-  sudo bash bitwarden-wazuh.sh install --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
-  sudo bash bitwarden-wazuh.sh add-org --name "Acme NL" --client-id "organization.yyyy" --client-secret "yyyy"
-  sudo bash bitwarden-wazuh.sh remove-org --name "Acme NL"
-  sudo bash bitwarden-wazuh.sh uninstall --force
+  sudo bash vault-event-monitor.sh install --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
+  sudo bash vault-event-monitor.sh add-org --name "Acme NL" --client-id "organization.yyyy" --client-secret "yyyy"
+  sudo bash vault-event-monitor.sh remove-org --name "Acme NL"
+  sudo bash vault-event-monitor.sh uninstall --force
 EOF
 }
 
