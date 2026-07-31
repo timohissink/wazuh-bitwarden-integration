@@ -242,4 +242,4 @@ Uninstalling removes the integration, including `organizations.json` and its API
 
 ## License
 
-No licence file is currently included. Add and document a licence appropriate for your intended use.
+Licensed under MIT. See the `LICENSE` file for details.
