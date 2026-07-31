@@ -1,6 +1,6 @@
 # Vault Event Monitor
 
-> An unofficial event-collection and alerting helper compatible with Bitwarden organisation event logs and Wazuh managers.
+> An unofficial integration for integrating Bitwarden event logs into Wazuh.
 
 ![Bash](https://img.shields.io/badge/Bash-5.0%2B-4EAA25?logo=gnubash&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
