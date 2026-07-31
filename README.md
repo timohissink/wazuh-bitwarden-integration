@@ -1,15 +1,17 @@
-# Bitwarden to Wazuh SIEM Integration
+# Vault Event Monitor
 
-> Turn Bitwarden organisation events into clear, actionable Wazuh alerts — without building and maintaining your own API poller or detection rules.
+> An unofficial integration for integrating Bitwarden event logs into Wazuh.
 
 ![Bash](https://img.shields.io/badge/Bash-5.0%2B-4EAA25?logo=gnubash&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
-![Wazuh](https://img.shields.io/badge/Wazuh-4.x-1E90FF)
-![Bitwarden](https://img.shields.io/badge/Bitwarden-Cloud%20%7C%20self--hosted-175DDC)
+![Wazuh compatible](https://img.shields.io/badge/Wazuh-compatible-1E90FF)
+![Bitwarden compatible](https://img.shields.io/badge/Bitwarden-compatible-175DDC)
 
-Bitwarden gives you the audit trail. Wazuh gives you the visibility. This project connects the two, enriching Bitwarden organisation events and classifying them with **45 ready-to-use Wazuh detection rules**.
+Vault Event Monitor collects Bitwarden organisation events, enriches them where possible, and writes JSON events for a Wazuh manager to monitor and classify with the included detection rules.
 
-Instead of a stream of opaque event codes and GUIDs, your team gets alerts that say what happened, who did it, and how urgently to investigate.
+> **Unofficial project.** This project is an independent, third-party project. It is not affiliated with, sponsored by, endorsed by, or supported by Wazuh, Inc. or Bitwarden, Inc.
+>
+> **Trademark notice.** Bitwarden is a trademark of Bitwarden, Inc. Wazuh is a trademark of Wazuh, Inc. All other trademarks are the property of their respective owners. References to these products describe compatibility only and do not imply endorsement.
 
 ```text
 Bitwarden organisation events → enriched JSON → Wazuh rules → actionable alerts
@@ -32,7 +34,7 @@ Raw events are not much fun to investigate:
 { "type": 1007, "actingUserId": "affe2391-9e7b-4c94-90fd-b3fe00ad5a25" }
 ```
 
-This integration turns that into a high-signal Wazuh alert:
+This helper can turn that into a high-signal alert:
 
 ```json
 {
@@ -45,29 +47,42 @@ This integration turns that into a high-signal Wazuh alert:
 }
 ```
 
-No hunting through numeric event types. No guessing whether a log line needs attention.
-
-## Get started in minutes
+## Get started
 
 ### Before you begin
 
 You need:
 
-- a working **Wazuh manager** (this project does not install Wazuh);
+- a working Wazuh manager (this project does not install Wazuh);
 - `sudo` or root access on that manager;
+- Python 3 and `pip` available to that Python installation;
 - outbound HTTPS access to Bitwarden or your self-hosted instance; and
-- a Bitwarden organisation on a **Teams or Enterprise** plan, with an organisation API key.
+- a Bitwarden organisation on a Teams or Enterprise plan, with an organisation API key.
+
+### Python dependency and system-package impact
+
+The poller requires the third-party Python package [`requests`](https://pypi.org/project/requests/). If it is not already importable by `python3`, the installer attempts to install it with:
+
+```bash
+python3 -m pip install requests --break-system-packages
+```
+
+On systems that manage Python through the operating-system package manager, `--break-system-packages` permits `pip` to modify that managed environment. This can conflict with distribution-provided packages or affect other software that uses the same Python installation. Review this impact before running the installer, especially on production hosts.
+
+If you prefer to avoid the installer performing that action, install and maintain `requests` through your operating system's supported package-management process before running the script, and confirm that `python3 -c "import requests"` succeeds. The current installer and cron job use the system `python3`; it does not create or use a virtual environment.
 
 ### Install
 
+After renaming the repository to a neutral name such as `vault-event-monitor`, use its new URL and directory name:
+
 ```bash
-git clone https://github.com/timohissink/wazuh-bitwarden-integration
-cd wazuh-bitwarden-integration
-chmod +x bitwarden-wazuh.sh
-sudo bash bitwarden-wazuh.sh
+git clone https://github.com/timohissink/vault-event-monitor
+cd vault-event-monitor
+chmod +x vault-event-monitor.sh
+sudo bash vault-event-monitor.sh
 ```
 
-Choose **Install integration** and enter your organisation name, client ID, and client secret. If you already have the API key, setup takes only a few minutes.
+Choose **Install integration** and enter your organisation name, client ID, and client secret.
 
 Need an API key? In the Bitwarden web vault, go to **Admin Console → Settings → Organisation info → API Key**. You must be an organisation Owner or Admin.
 
@@ -78,9 +93,6 @@ Bitwarden Public API (one or more organisations)
                   │
                   ▼
       Python poller, every minute
-      • fetches new organisation events
-      • resolves member/user IDs to emails
-      • tags events with their organisation
                   │
                   ▼
     /var/log/bitwarden/events.log
@@ -89,16 +101,18 @@ Bitwarden Public API (one or more organisations)
        Wazuh JSON log monitoring
                   │
                   ▼
-       45 Bitwarden detection rules
+       Included detection rules
                   │
                   ▼
           Wazuh alerts
 ```
 
+The current release writes the poller to `/opt/scripts/bitwarden_wazuh_poller.py` from Python source embedded in the Bash installer. This keeps deployment self-contained, but means the generated poller should be reviewed together with `vault-event-monitor.sh`; changes made only to the installed `.py` file can be replaced when the installer is run again.
+
 ## Use the guided menu
 
 ```bash
-sudo bash bitwarden-wazuh.sh
+sudo bash vault-event-monitor.sh
 ```
 
 ```text
@@ -112,39 +126,30 @@ sudo bash bitwarden-wazuh.sh
 8) Exit
 ```
 
-Prompts have sensible defaults. After adding an organisation, you can run an immediate test instead of waiting for the next scheduled poll.
-
 ## Automate it
 
-All actions are also available without the menu:
-
 ```bash
-sudo bash bitwarden-wazuh.sh install --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
-sudo bash bitwarden-wazuh.sh add-org --name "Acme NL" --client-id "organization.yyyy" --client-secret "yyyy"
-sudo bash bitwarden-wazuh.sh remove-org --name "Acme NL"
-sudo bash bitwarden-wazuh.sh status
-sudo bash bitwarden-wazuh.sh run-now
-sudo bash bitwarden-wazuh.sh update
-sudo bash bitwarden-wazuh.sh uninstall --force
-sudo bash bitwarden-wazuh.sh help
+sudo bash vault-event-monitor.sh install --name "Acme Corp" --client-id "organization.xxxx" --client-secret "xxxx"
+sudo bash vault-event-monitor.sh add-org --name "Acme NL" --client-id "organization.yyyy" --client-secret "yyyy"
+sudo bash vault-event-monitor.sh remove-org --name "Acme NL"
+sudo bash vault-event-monitor.sh status
+sudo bash vault-event-monitor.sh run-now
+sudo bash vault-event-monitor.sh update
+sudo bash vault-event-monitor.sh uninstall --force
 ```
-
-The script only prompts when attached to an interactive terminal, making it suitable for configuration management and CI.
 
 ## Self-hosted Bitwarden
 
 Bitwarden Cloud is the default. For a self-hosted organisation, add your identity and API endpoints:
 
 ```bash
-sudo bash bitwarden-wazuh.sh add-org \
+sudo bash vault-event-monitor.sh add-org \
   --name "Acme Self-Hosted" \
   --client-id "organization.yyyy" \
   --client-secret "yyyy" \
   --identity-url "https://bitwarden.acme.example.com/identity/connect/token" \
   --api-url "https://bitwarden.acme.example.com/api/public"
 ```
-
-Cloud and self-hosted organisations can run side by side.
 
 ## What it detects
 
@@ -161,52 +166,32 @@ Cloud and self-hosted organisations can run side by side.
 | Bitwarden Send | 100284–100286, 100294 | 3 | Send activity |
 | Other item/account activity | 100287, 100290 | 3 | Item views, autofill, and account events |
 
-Every currently documented Bitwarden event type has a tailored rule. Events added by Bitwarden in the future fall back to the generic `100250` classifier until a dedicated mapping is added.
+## Updating rules and configuration
 
-## Verify the integration
+The `update` command removes the marker-delimited project blocks from `/var/ossec/etc/ossec.conf` and `/var/ossec/etc/rules/local_rules.xml`, then recreates them from the installer. As a result, any manual edits **inside the project-managed rule block**—including rule IDs, levels, groups, descriptions, and mappings—will be overwritten by `install` or `update`.
+
+Backups are created before configuration changes, but they are rollback copies rather than a way to preserve local customisations during an update. Keep custom rules outside the marked project block (for example, in a separate Wazuh rules file) and document or version-control them independently. Review the diff and retain a backup before running updates on a customised manager.
+
+## Verify the installation
 
 ```bash
-sudo bash bitwarden-wazuh.sh status
+sudo bash vault-event-monitor.sh status
 sudo tail -f /var/log/bitwarden/poller.log
 sudo tail -f /var/ossec/logs/alerts/alerts.json | grep '"description":"Bitwarden: '
-```
-
-To test the most recently collected event directly against Wazuh's rules:
-
-```bash
-sudo tail -1 /var/log/bitwarden/events.log \
-  | sudo /var/ossec/bin/wazuh-logtest 2>&1 | sed -n '/Phase 3/,$p'
 ```
 
 ## What gets installed
 
 | Path | Purpose |
 |---|---|
-| `/opt/scripts/bitwarden_wazuh_poller.py` | Polls the Bitwarden Public API |
+| `/opt/scripts/bitwarden_wazuh_poller.py` | Generated Python poller for the Bitwarden Public API |
 | `/etc/bitwarden-wazuh/organizations.json` | Credentials and organisation settings (mode `600`) |
 | `/etc/bitwarden-wazuh/organizations.json.example` | Shareable configuration template |
 | `/etc/bitwarden-wazuh/README.md` | Configuration documentation on the server |
 | `/var/log/bitwarden/events.log` | Events monitored by Wazuh |
 | `/etc/cron.d/bitwarden-wazuh` | Runs the poller every minute |
-| `/var/ossec/etc/ossec.conf` | Adds the Wazuh `<localfile>` entry |
-| `/var/ossec/etc/rules/local_rules.xml` | Adds rules `100250`–`100294` |
-
-Wazuh configuration changes are marked, backed up before each change, validated with Wazuh's configuration tests, and only then applied. Unrelated configuration is left alone.
-
-## Important limitation: item names stay private
-
-This is a feature of Bitwarden's zero-knowledge design, not a limitation of the integration: item names, notes, and passwords are encrypted client-side and are not exposed by the organisation event API. Alerts can include the opaque `itemId`, but never the plaintext item name.
-
-Member identities are different: Bitwarden stores email addresses for account administration, so `actingUserId` and `memberId` can be resolved to a real address.
-
-## Uninstall
-
-```bash
-sudo bash bitwarden-wazuh.sh uninstall          # asks for confirmation
-sudo bash bitwarden-wazuh.sh uninstall --force  # for automation
-```
-
-Uninstalling removes the integration, including `organizations.json` and its API secrets, and reverses only the marked Wazuh configuration blocks.
+| `/var/ossec/etc/ossec.conf` | Adds a marked Wazuh `<localfile>` entry |
+| `/var/ossec/etc/rules/local_rules.xml` | Adds project-managed rules `100250`–`100294` |
 
 ## Security
 
@@ -215,9 +200,6 @@ Uninstalling removes the integration, including `organizations.json` and its API
 - If a key may have been exposed, rotate it immediately in the Bitwarden Admin Console.
 - `/var/log/bitwarden` is `root:wazuh`, mode `2750`, allowing Wazuh to read events without making the directory world-readable.
 
-## Repository layout
+## License
 
-| File | Purpose |
-|---|---|
-| `bitwarden-wazuh.sh` | Installs, manages, updates, and removes the integration |
-
+Licensed under MIT. See the `LICENSE` file for details.
